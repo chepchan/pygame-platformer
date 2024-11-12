@@ -1,31 +1,42 @@
 import pygame
 from config import SCREEN_WIDTH, MAP_COLLISION_LAYER
 
+
+class SpriteSheet(object):
+    def __init__(self, fileName):
+        self.sheet = pygame.image.load(fileName)
+
+    def image_at(self, rectangle):
+        rect = pygame.Rect(rectangle)
+        image = pygame.Surface(rect.size, pygame.SRCALPHA, 32).convert_alpha()
+        image.blit(self.sheet, (0, 0), rect)
+        return image
+    
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
-
+        
         #load spritesheet of frames for this player
         self.sprites = SpriteSheet("assets/player.png")
-        self.stillRight = self.sprites.image_at((80, 16, 96, 32))
-        self.stillLeft = self.sprites.image_at((16, 16, 32, 32))
+        self.stillRight = self.sprites.image_at((80, 16, 16, 16))
+        self.stillLeft = self.sprites.image_at((32, 16, 16, 16))
 
         #list of frames for each animation
-        self.runningRight = (self.sprites.image_at((64, 0, 80, 16)),
-                             self.sprites.image_at((80, 0, 96, 16)),
-                             self.sprites.image_at((96, 0, 112, 16)),
-                             self.sprites.image_at((112, 0, 128, 16)))
+        self.runningRight = (self.sprites.image_at((64, 0, 16, 16)),
+                             self.sprites.image_at((80, 0, 16, 16)),
+                             self.sprites.image_at((96, 0, 16, 16)),
+                             self.sprites.image_at((112, 0, 16, 16)))
         
-        self.runningLeft = (self.sprites.image_at((48, 0, 64, 16)),
-                             self.sprites.image_at((32, 0, 48, 16)),
-                             self.sprites.image_at((16, 0, 32, 16)),
+        self.runningLeft = (self.sprites.image_at((48, 0, 16, 16)),
+                             self.sprites.image_at((32, 0, 16, 16)),
+                             self.sprites.image_at((16, 0, 16, 16)),
                              self.sprites.image_at((0, 0, 16, 16)))
         
-        self.jumpingRight = (self.sprites.image_at((64, 16, 80, 32)),
-                             self.sprites.image_at((80, 16, 96, 32)))
+        self.jumpingRight = (self.sprites.image_at((64, 16, 16, 16)),
+                             self.sprites.image_at((80, 16, 16, 16)))
         
-        self.jumpingLeft = (self.sprites.image_at((48, 16, 64, 32)),
-                             self.sprites.image_at((32, 16, 48, 32)))
+        self.jumpingLeft = (self.sprites.image_at((48, 16, 16, 16)),
+                             self.sprites.image_at((32, 16, 16, 16)))
         
         self.image = self.stillRight
 
@@ -65,7 +76,7 @@ class Player(pygame.sprite.Sprite):
         if self.rect.right >= SCREEN_WIDTH - 200:
             difference = self.rect.right - (SCREEN_WIDTH - 200)
             self.rect.right = SCREEN_WIDTH - 200
-            self.currentLevel.shiftLevel(-difference) #??????????????????????
+            self.currentLevel.shiftLevel(-difference)
 
         if self.rect.left <= 200:
             difference = 200 - self.rect.left
@@ -78,30 +89,28 @@ class Player(pygame.sprite.Sprite):
         #get tiles in collision layer that player is currently touching
         tileHitList = pygame.sprite.spritecollide(self, self.currentLevel.layers[MAP_COLLISION_LAYER].tiles, False)
 
-        if tileHitList: #if there are tiles in the list
+        if len(tileHitList) > 0: #if there are tiles in the list
             #move player to correct side of the tile, update player frame ??????????????????
             for tile in tileHitList:
                 if self.changeY > 0:
                     self.rect.bottom = tile.rect.top
-                    self.changeY = 0
-                    self.is_jumping = False
-                    # if self.direction == "right":
-                    #     self.image = self.stillRight
-                    # else:
-                    #     self.image = self.stillLeft
-                elif self.changeY < 0:
+                    self.changeY = 1
+                    if self.direction == "right":
+                        self.image = self.stillRight
+                    else:
+                        self.image = self.stillLeft
+                else:
                     self.rect.top = tile.rect.bottom
                     self.changeY = 0
     
         else: #if there are no tiles in the list
             #update player change for jumping/falling and player frame
-            self.changeY += 0.2 # gravity
+            self.changeY += 0.3 # gravity i think
             if self.changeY > 0:
                 if self.direction == "right":
                     self.image = self.jumpingRight[1]
                 else:
                     self.image = self.jumpingLeft[1]
-
         #if player is on ground and running, update running animation
         if self.running and self.changeY == 1:
             if self.direction == "right":
@@ -152,12 +161,3 @@ class Player(pygame.sprite.Sprite):
         screen.blit(self.image, self.rect)
 
 
-class SpriteSheet(object):
-    def __init__(self, fileName):
-        self.sheet = pygame.image.load(fileName)
-
-    def image_at(self, rectangle):
-        rect = pygame.Rect(rectangle)
-        image = pygame.Surface(rect.size, pygame.SRCALPHA, 16).convert_alpha()
-        image.blit(self.sheet, (0, 0), rect)
-        return image
